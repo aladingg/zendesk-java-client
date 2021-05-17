@@ -2,6 +2,7 @@ package org.zendesk.client.v2.model.events;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.zendesk.client.v2.model.ChildEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,7 +12,7 @@ import java.util.List;
  * @author stephenc
  * @since 05/04/2013 11:56
  */
-public class CreateEvent extends Event {
+public class CreateEvent extends ChildEvent {
 
     private static final long serialVersionUID = 1L;
 

@@ -2,20 +2,10 @@ package org.zendesk.client.v2;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
+import org.asynchttpclient.*;
 import org.asynchttpclient.request.body.multipart.FilePart;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.slf4j.Logger;
@@ -23,46 +13,23 @@ import org.slf4j.LoggerFactory;
 import org.zendesk.client.v2.model.*;
 import org.zendesk.client.v2.model.dynamic.DynamicContentItem;
 import org.zendesk.client.v2.model.dynamic.DynamicContentItemVariant;
-import org.zendesk.client.v2.model.hc.Article;
-import org.zendesk.client.v2.model.hc.ArticleAttachments;
-import org.zendesk.client.v2.model.hc.Category;
-import org.zendesk.client.v2.model.hc.Section;
-import org.zendesk.client.v2.model.hc.Subscription;
-import org.zendesk.client.v2.model.hc.Translation;
-import org.zendesk.client.v2.model.hc.PermissionGroup;
-import org.zendesk.client.v2.model.hc.UserSegment;
+import org.zendesk.client.v2.model.hc.*;
 import org.zendesk.client.v2.model.schedules.Holiday;
 import org.zendesk.client.v2.model.schedules.Schedule;
-import org.zendesk.client.v2.model.targets.BasecampTarget;
-import org.zendesk.client.v2.model.targets.CampfireTarget;
-import org.zendesk.client.v2.model.targets.EmailTarget;
-import org.zendesk.client.v2.model.targets.PivotalTarget;
-import org.zendesk.client.v2.model.targets.Target;
-import org.zendesk.client.v2.model.targets.TwitterTarget;
-import org.zendesk.client.v2.model.targets.UrlTarget;
+import org.zendesk.client.v2.model.targets.*;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.System;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import static java.lang.System.*;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * @author stephenc
@@ -430,9 +397,10 @@ public class Zendesk implements Closeable {
         return new PagedIterable<>(cnst("/tickets/recent.json"), handleList(Ticket.class, "tickets"));
     }
 
-    public Iterable<TicketEvent> getTicketEventsIncrementally(Date startTime) {
+    public PagedIterable<TicketEvent> getTicketEventsIncrementally(Date startTime) {
         return new PagedIterable<>(
-                tmpl("/incremental/ticket_events.json{?start_time}&include=comment_events").set("start_time", msToSeconds(startTime.getTime())),
+//                tmpl("/incremental/ticket_events.json{?start_time}&include=comment_events").set("start_time", msToSeconds(startTime.getTime())),
+                tmpl("/incremental/ticket_events.json{?start_time}").set("start_time", msToSeconds(startTime.getTime())),
                 handleIncrementalList(TicketEvent.class, "ticket_events"));
     }
 
@@ -2427,6 +2395,8 @@ public class Zendesk implements Closeable {
 
     private abstract class PagedAsyncCompletionHandler<T> extends ZendeskAsyncCompletionHandler<T> {
         private String nextPage;
+        protected Date endTime;
+        protected Boolean endOfStream;
 
         public void setPagedProperties(JsonNode responseNode, Class<?> clazz) {
             JsonNode node = responseNode.get(NEXT_PAGE);
@@ -2448,6 +2418,14 @@ public class Zendesk implements Closeable {
         public void setNextPage(String nextPage) {
             this.nextPage = nextPage;
         }
+
+        public Date getEndTime() {
+            return endTime;
+        }
+
+        public Boolean getEndOfStream() {
+            return endOfStream;
+        }
     }
 
     private class PagedAsyncListCompletionHandler<T> extends PagedAsyncCompletionHandler<List<T>> {
@@ -2467,6 +2445,18 @@ public class Zendesk implements Closeable {
                 List<T> values = new ArrayList<>();
                 for (JsonNode node : responseNode.get(name)) {
                     values.add(mapper.convertValue(node, clazz));
+                }
+
+                JsonNode endOfStreamNode = responseNode.get("end_of_stream");
+                if (endOfStreamNode != null) {
+                    endOfStream = mapper.convertValue(endOfStreamNode, Boolean.class);
+                    if (endOfStream) {
+                        JsonNode endTimeNode = responseNode.get("end_time");
+                        if (endTimeNode != null) {
+                            Long endTimeValue = mapper.convertValue(endTimeNode, Long.class);
+                            endTime = new Date(endTimeValue * 1000);
+                        }
+                    }
                 }
                 return values;
             } else if (isRateLimitResponse(response)) {
@@ -2895,7 +2885,7 @@ public class Zendesk implements Closeable {
     // Helper classes
     //////////////////////////////////////////////////////////////////////
 
-    private class PagedIterable<T> implements Iterable<T> {
+    public class PagedIterable<T> implements Iterable<T> {
 
         private final Uri url;
         private final PagedAsyncCompletionHandler<List<T>> handler;
@@ -2903,6 +2893,14 @@ public class Zendesk implements Closeable {
         private PagedIterable(Uri url, PagedAsyncCompletionHandler<List<T>> handler) {
             this.handler = handler;
             this.url = url;
+        }
+
+        public Date getEndTime() {
+            return this.handler.getEndTime();
+        }
+
+        public Boolean getEndOfStream() {
+            return this.handler.getEndOfStream();
         }
 
         public Iterator<T> iterator() {

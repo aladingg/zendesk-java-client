@@ -2,6 +2,7 @@ package org.zendesk.client.v2.model.events;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.zendesk.client.v2.model.Attachment;
+import org.zendesk.client.v2.model.ChildEvent;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
  * @author stephenc
  * @since 05/04/2013 11:54
  */
-public class CommentEvent extends PublicPrivateEvent {
+public class CommentEvent extends ChildEvent {
 
     private static final long serialVersionUID = 1L;
 
