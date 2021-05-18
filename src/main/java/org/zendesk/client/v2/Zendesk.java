@@ -22,6 +22,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.System;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -2454,7 +2455,11 @@ public class Zendesk implements Closeable {
                         JsonNode endTimeNode = responseNode.get("end_time");
                         if (endTimeNode != null) {
                             Long endTimeValue = mapper.convertValue(endTimeNode, Long.class);
-                            endTime = new Date(endTimeValue * 1000);
+                            if (endTimeValue == null) {     // 如果没有增量数据，此时返回的endTime为null。{"ticket_events":[],"next_page":null,"count":0,"end_of_stream":true,"end_time":null}
+                                endTime = null;
+                            } else {
+                                endTime = new Date(endTimeValue * 1000);
+                            }
                         }
                     }
                 }
