@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.*;
+import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 import org.asynchttpclient.request.body.multipart.FilePart;
+import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.System;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -585,7 +586,16 @@ public class Zendesk implements Closeable {
                         content), handle(Attachment.Upload.class, "upload")));
     }
 
-  public void associateAttachmentsToArticle(String idArticle, List<Attachment> attachments) {
+    public Long createUnassociatedMacroAttachment(File file, String fileName, String contentType) throws IOException {
+        RequestBuilder builder = reqBuilder("POST", tmpl("/macros/attachments.json{?filename}").set("filename", fileName).toString());
+        builder.setHeader("Content-Type", "multipart/form-data");
+        builder.addBodyPart(new FilePart("attachment", file, contentType, StandardCharsets.UTF_8, fileName));
+        final Request req = builder.build();
+        MacroAttachment macroAttachment = complete(submit(req, handle(MacroAttachment.class, "macro_attachment")));
+        return macroAttachment.getId();
+    }
+
+    public void associateAttachmentsToArticle(String idArticle, List<Attachment> attachments) {
         TemplateUri uri = tmpl("/help_center/articles/{article_id}/bulk_attachments.json").set("article_id", idArticle);
         List<Long> attachmentsIds = new ArrayList<>();
         for(Attachment item : attachments){
