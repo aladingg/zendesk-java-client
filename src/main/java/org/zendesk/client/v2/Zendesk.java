@@ -8,9 +8,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.*;
 import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 import org.asynchttpclient.request.body.multipart.FilePart;
-import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.request.body.multipart.StringPart;
-import org.joda.time.field.FieldUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zendesk.client.v2.model.*;
@@ -25,6 +23,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.System;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -601,6 +600,11 @@ public class Zendesk implements Closeable {
         builder.addBodyPart(new ByteArrayPart("attachment", fileContent, contentType, StandardCharsets.UTF_8, fileName));
         final Request req = builder.build();
         return complete(submit(req, handle(MacroAttachment.class, "macro_attachment")));
+    }
+
+    public List<MacroAttachment> getMacroAttachments(Long macroId) {
+        return complete(submit(req("GET", tmpl("/macros/{macro_id}/attachments").set("macro_id", macroId)),
+                handleList(MacroAttachment.class, "macro_attachments")));
     }
 
     public void associateAttachmentsToArticle(String idArticle, List<Attachment> attachments) {

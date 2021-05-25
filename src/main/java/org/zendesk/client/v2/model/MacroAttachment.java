@@ -14,7 +14,6 @@ public class MacroAttachment {
     private Long size;
     private Date createdAt;
 
-
     public Long getId() {
         return id;
     }
