@@ -10,6 +10,7 @@ import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 import org.asynchttpclient.request.body.multipart.FilePart;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.request.body.multipart.StringPart;
+import org.joda.time.field.FieldUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zendesk.client.v2.model.*;
@@ -586,13 +587,20 @@ public class Zendesk implements Closeable {
                         content), handle(Attachment.Upload.class, "upload")));
     }
 
-    public Long createUnassociatedMacroAttachment(File file, String fileName, String contentType) throws IOException {
+    public MacroAttachment createUnassociatedMacroAttachment(File file, String fileName, String contentType) throws IOException {
         RequestBuilder builder = reqBuilder("POST", tmpl("/macros/attachments.json{?filename}").set("filename", fileName).toString());
         builder.setHeader("Content-Type", "multipart/form-data");
         builder.addBodyPart(new FilePart("attachment", file, contentType, StandardCharsets.UTF_8, fileName));
         final Request req = builder.build();
-        MacroAttachment macroAttachment = complete(submit(req, handle(MacroAttachment.class, "macro_attachment")));
-        return macroAttachment.getId();
+        return complete(submit(req, handle(MacroAttachment.class, "macro_attachment")));
+    }
+
+    public MacroAttachment createUnassociatedMacroAttachment(byte[] fileContent, String fileName, String contentType) throws IOException {
+        RequestBuilder builder = reqBuilder("POST", tmpl("/macros/attachments.json{?filename}").set("filename", fileName).toString());
+        builder.setHeader("Content-Type", "multipart/form-data");
+        builder.addBodyPart(new ByteArrayPart("attachment", fileContent, contentType, StandardCharsets.UTF_8, fileName));
+        final Request req = builder.build();
+        return complete(submit(req, handle(MacroAttachment.class, "macro_attachment")));
     }
 
     public void associateAttachmentsToArticle(String idArticle, List<Attachment> attachments) {
