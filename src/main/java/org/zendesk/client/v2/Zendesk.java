@@ -568,16 +568,16 @@ public class Zendesk implements Closeable {
         complete(submit(req("DELETE", tmpl("/suspended_tickets/{id}.json").set("id", id)), handleStatus()));
     }
 
-    public Attachment.Upload createUpload(String fileName, byte[] content) {
-        return createUpload(null, fileName, "application/binary", content);
+    public Attachment.Upload createUpload(String fileName, byte[] content, boolean inline) {
+        return createUpload(null, fileName, "application/binary", content, inline);
     }
 
-    public Attachment.Upload createUpload(String fileName, String contentType, byte[] content) {
-        return createUpload(null, fileName, contentType, content);
+    public Attachment.Upload createUpload(String fileName, String contentType, byte[] content, boolean inline) {
+        return createUpload(null, fileName, contentType, content, inline);
     }
 
-    public Attachment.Upload createUpload(String token, String fileName, String contentType, byte[] content) {
-        TemplateUri uri = tmpl("/uploads.json{?filename,token}").set("filename", fileName);
+    public Attachment.Upload createUpload(String token, String fileName, String contentType, byte[] content, boolean inline) {
+        TemplateUri uri = tmpl("/uploads.json{?filename,inline,token}").set("filename", fileName).set("inline", inline);
         if (token != null) {
             uri.set("token", token);
         }
