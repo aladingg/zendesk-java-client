@@ -34,6 +34,7 @@ public class Attachment extends Photo {
 
     public static class Upload {
         private String token;
+        private Attachment attachment;
         private List<Attachment> attachments;
 
         public String getToken() {
@@ -42,6 +43,14 @@ public class Attachment extends Photo {
 
         public void setToken(String token) {
             this.token = token;
+        }
+
+        public Attachment getAttachment() {
+            return attachment;
+        }
+
+        public void setAttachment(Attachment attachment) {
+            this.attachment = attachment;
         }
 
         public List<Attachment> getAttachments() {
