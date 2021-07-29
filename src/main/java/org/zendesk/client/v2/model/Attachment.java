@@ -63,8 +63,9 @@ public class Attachment extends Photo {
 
         @Override
         public String toString() {
-            return "Upload" +
-                    "{token='" + token + '\'' +
+            return "Upload{" +
+                    "token='" + token + '\'' +
+                    ", attachment=" + attachment +
                     ", attachments=" + attachments +
                     '}';
         }
