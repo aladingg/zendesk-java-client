@@ -23,7 +23,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.System;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -1725,8 +1724,8 @@ public class Zendesk implements Closeable {
        complete(submit(req("PUT", tmpl("/apps/installations/{id}.json").set("id", id), JSON, json.getBytes()), handleStatus()));
     }
 
-    public Iterable<SatisfactionRating> getSatisfactionRatings() {
-        return new PagedIterable<>(cnst("/satisfaction_ratings.json"),
+    public Iterable<SatisfactionRating> getSatisfactionRatings(Date beginTime) {
+        return new PagedIterable<>(tmpl("/satisfaction_ratings.json{?start_time}").set("start_time", msToSeconds(beginTime.getTime())),
                 handleList(SatisfactionRating.class, "satisfaction_ratings"));
     }
 
