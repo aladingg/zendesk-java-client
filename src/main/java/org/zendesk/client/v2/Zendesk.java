@@ -1724,8 +1724,10 @@ public class Zendesk implements Closeable {
        complete(submit(req("PUT", tmpl("/apps/installations/{id}.json").set("id", id), JSON, json.getBytes()), handleStatus()));
     }
 
-    public Iterable<SatisfactionRating> getSatisfactionRatings(Date beginTime) {
-        return new PagedIterable<>(tmpl("/satisfaction_ratings.json{?start_time}").set("start_time", msToSeconds(beginTime.getTime())),
+    public Iterable<SatisfactionRating> getSatisfactionRatings(String score, Date beginTime) {
+        return new PagedIterable<>(tmpl("/satisfaction_ratings.json{?score,start_time}")
+                .set("start_time", msToSeconds(beginTime.getTime()))
+                .set("score", score),
                 handleList(SatisfactionRating.class, "satisfaction_ratings"));
     }
 
